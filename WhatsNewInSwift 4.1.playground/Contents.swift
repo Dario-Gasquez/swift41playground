@@ -1,6 +1,6 @@
 
 //: [Previous](@previous)
-//:# Conditional Conformance
+//:## Conditional Conformance
 
 /*:
  Conditional conformance enables protocol conformance for generic types where the type arguments satisfy certain conditions [SE-0143]. This is a powerful feature that makes your code more flexible. You can see how it works with a few examples.
@@ -66,7 +66,7 @@ let ibanezBand = Band(name: "Ibanez Band", lead: ibanezGuitar)
 let sameGuitarBands = (fenderBand == ibanezBand)
 
 
-//:## Conditional Conformance in JSON Parsing
+//:### Conditional Conformance in JSON Parsing
 import Foundation
 
 struct Student: Codable, Hashable {
@@ -268,6 +268,111 @@ protocol NewTune {
     var pitch: Pitch? { get set }
 }
 
+//: ## Indexes Distances in Collections
+// Swift 4 used IndexDistances to declare the number of elements in a collection:
+func typeOfCollection<C: Collection>(_ collection: C) -> (String, C.IndexDistance) {
+    let collectionType: String
+    
+    switch collection.count {
+    case 0...100:
+        collectionType = "small"
+    case 101...1000:
+        collectionType = "medium"
+    case 1001...:
+        collectionType = "big"
+    default:
+        collectionType = "unknown"
+    }
+    
+    return (collectionType, collection.count)
+}
+
+// typeOfCollection returned tuple could be used for any kind of collections: array, dictionaries, sets; for example:
+typeOfCollection(1...800) // ("medium", 800)
+typeOfCollection(greetings) // ("small", 2)
+
+// the function's return type could be improved by constraining IndexDistance to Int with a where clause:
+func typeOfCollection2<C: Collection>(_ collection: C) -> (String, Int) where C.IndexDistance == Int {
+    // same code as above
+    return ("dummy", 3)
+}
+
+// Swift 4.1 replaces IndexDistance with Int in the standard library, so you don't need a where clause in this case [SE-0191]:
+func typeOfCollection41<C: Collection>(_ collection: C) -> (String, Int) {
+    //same code as above typeOfCollection
+    return ("avoidCompileError", 1)
+}
+
+//: ## Structure Initializers in Modules
+// Adding properties to public structs could lead to source-breaking changes in Swift 4. This change makes structs behave like classes: cross-module initializers must be convenience initializers in Swift 4.1 [SE-0189].
+
+
+//: ## Platform Settings and Build Configuration Updates
+// Swift 4.1 add some much-needed platform and build features for code testing:
+
+//: ### Build Imports
+// In Swift 4 you tested if a module was available on a certain platform by checkoung the operating system itself; for example:
+#if os(iOS) || os(tvOS)
+    import UIKit
+    print("UIKit is available on this platform")
+#else
+    print("UIKit is NOT available on this platform")
+#endif
+
+// Swift 4.1 further simplifies this by letting you check for the module itself instead, [SE-0075]:
+#if canImport(UIKit)
+    print("UIKit available")
+#endif
+
+//: ### Target Environments
+// In Swift 4 the most well-known way to check wether you were running on a simulator or a physical dvice was by checking the architecture and os:
+#if ( arch(i386) || arch(x86_64) ) && ( os(iOS) || os(tvOS) || os(watchOS) )
+    print("Testing in simulator")
+#else
+    print("Testing on real device")
+#endif
+
+// Swift 4.1 makes this check more straightforward [SE-0190]:
+#if targetEnvironment(simulator)
+    print("running in simulator")
+#endif
+
+//: ## Miscellaneous
+//: ### Compacting Sequences
+// In Swift 4, it was fairly common to use flatMap(_:) to filter out nil values from a sequence:
+let pets = ["Sclip", nil, "Nori", nil]
+let petNames = pets.flatMap { $0 }
+
+// but flatMap(_:) was overloaded in various ways and, in that specific scenario the naming was not very descriptive.
+// For that reason Swift 4.1 renames flatMap(_:) to compactMap(_:) to make its meaning clearer and unique [SE-0187]:
+let petNames41 = pets.compactMap { $0 }
+
+//: ### Unsafe Pointers
+// Swift 4 used temporary unsafe mutable pointers to create and mutate unsafe mutable buffer pointers:
+let buffer = UnsafeMutableBufferPointer<Int>(start: UnsafeMutablePointer<Int>.allocate(capacity: 10), count: 10)
+let mutableBuffer = UnsafeMutableBufferPointer(start: UnsafeMutablePointer(mutating:buffer.baseAddress), count: buffer.count)
+
+// Swift 4.1 lets you work with unsafe mutable buffer pointers directly [SE-0184]:
+let buffer41 = UnsafeMutableBufferPointer<Int>.allocate(capacity: 10)
+let mutableBuffer41 = UnsafeMutableBufferPointer(mutating: UnsafeBufferPointer(buffer41))
+
+//: ### New Playground features
+// Swift 4 allowed you to customize type descriptions in Xcode paygrounds:
+class Tutorial {}
+extension Tutorial: CustomPlaygroundQuickLookable {
+    var customPlaygroundQuickLook: PlaygroundQuickLook {
+        return .text("raywenderlich tutorials")
+    }
+}
+let tutorial = Tutorial()
+
+// In Swift 4.1 the description's type is no longer limited to: PlaygroundQuickLook:
+extension Tutorial: CustomPlaygroundDisplayConvertible {
+    var playgroundDescription: Any {
+        return "raywenderlich tutorial 4.1"
+    }
+}
+// We can implement CustomPlaygroundDisplayConvertible. The description's type is Any now, so we can return anything from playgroundDescription. [SE-0198]
 
 //: [Next](@next)
 
